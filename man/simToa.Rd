@@ -4,7 +4,8 @@
 \alias{simToa}
 \title{Sim TOA matrix for the supplied telemetryTrack}
 \usage{
-simToa(telemetryTrack, hydros, pingType, sigmaToa, pNA, pMP)
+simToa(telemetryTrack, hydros, pingType, sigmaToa, pNA, pMP,
+  clockDrift = FALSE)
 }
 \arguments{
 \item{telemetryTrack}{Dataframe obtained from simTelemetryTrack}
@@ -18,6 +19,8 @@ simToa(telemetryTrack, hydros, pingType, sigmaToa, pNA, pMP)
 \item{pNA}{Probability of missing detection 0-1}
 
 \item{pMP}{Probability of multipath propagated signal 0-1}
+
+\item{clockDrift}{Introduce drift on hydro clocks to simulate real world hydros}
 }
 \value{
 List containing TOA matrix (toa) and matrix indicating, which obs are multipath (mp_mat)

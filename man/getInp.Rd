@@ -5,7 +5,8 @@
 \title{Get prepared inp-object for use in TMB-call}
 \usage{
 getInp(hydros, toa, E_dist, n_ss, pingType, sdInits = 1, rbi_min = 0,
-  rbi_max = 0, ss_data_what = "est", ss_data = 0)
+  rbi_max = 0, ss_data_what = "est", ss_data = 0,
+  inline_sync = FALSE)
 }
 \arguments{
 \item{hydros}{Dataframe from simHydros() or Dataframe with columns hx and hy containing positions of the receivers. Translate the coordinates to get the grid centre close to (0;0).}
@@ -25,6 +26,8 @@ getInp(hydros, toa, E_dist, n_ss, pingType, sdInits = 1, rbi_min = 0,
 \item{ss_data_what}{What speed of sound (ss) data to be used. Default ss_data_what='est': ss is estimated by the model. Alternatively, if ss_data_what='data': ss_data must be provided and length(ss_data) == ncol(toa)}
 
 \item{ss_data}{Vector of ss-data to be used if ss_data_what = 'est'. Otherwise ss_data <- 0 (default)}
+
+\item{inline_sync}{If TRUE, attempt to synchronize hydrophones on-the-fly}
 }
 \value{
 List of input data ready for use in TMB-call

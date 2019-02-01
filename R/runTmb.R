@@ -8,7 +8,7 @@ runTmb <- function(inp, maxIter=1000, getPlsd=TRUE, getRep=TRUE){
 	obj <- TMB::MakeADFun(
 			data = inp$datTmb,
 			parameters = inp$params,
-			random = c("X", "Y", "ss", "top"),
+			random = c("X", "Y", "ss", "top", "sync_offset", "sync_slope"),
 			DLL = "yaps",
 			inner.control = list(maxit = maxIter), 
 			silent=FALSE

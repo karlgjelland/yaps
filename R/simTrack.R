@@ -147,12 +147,22 @@ simHydros <- function(auto=TRUE, trueTrack=NULL){
 #' @param sigmaToa Detection uncertainty
 #' @param pNA Probability of missing detection 0-1
 #' @param pMP Probability of multipath propagated signal 0-1
+#' @param clockDrift Introduce drift on hydro clocks to simulate real world hydros
 #' @inheritParams getInp
 #' @return List containing TOA matrix (toa) and matrix indicating, which obs are multipath (mp_mat)
 #' @export
-simToa <- function(telemetryTrack, hydros, pingType, sigmaToa, pNA, pMP){
+simToa <- function(telemetryTrack, hydros, pingType, sigmaToa, pNA, pMP, clockDrift=FALSE){
 	#correct toa
 	toa <- apply(telemetryTrack, 1, function(k) k['top'] + sqrt((hydros$hx - k['x'])^2 + (hydros$hy - k['y'])^2 ) / k['ss'])
+	
+	# add clock drift in hydros...
+	if(clockDrift){
+		sync_offset <- runif(nrow(hydros), -6, 6)
+		sync_slope  <- runif(nrow(hydros), -1e-3, 1e-3)
+		sync_offset[1] <- 0
+		sync_slope[1] <- 0
+		toa <- toa + sync_offset + sync_slope*toa
+	}
 	
 	#add random errors
 	toa <- toa + stats::rnorm(length(toa), 0, sigmaToa)
@@ -176,7 +186,11 @@ simToa <- function(telemetryTrack, hydros, pingType, sigmaToa, pNA, pMP){
 	mp_mat <- matrix(stats::rbinom(length(toa),1, pMP), ncol=ncol(toa))
 	toa <- toa + mp_mat * stats::runif(length(toa), -150, 150) / telemetryTrack$ss
 	
-	return(list(toa=toa, mp_mat=mp_mat))
+	if(clockDrift){
+		return(list(toa=toa, mp_mat=mp_mat, sync_offset=sync_offset, sync_slope=sync_slope))
+	} else {
+		return(list(toa=toa, mp_mat=mp_mat))
+	}
 }
 
 

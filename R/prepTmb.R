@@ -10,12 +10,12 @@
 #' @param sdInits If >0 initial values will be randomized around the normally fixed value using rnorm(length(inits), mean=inits, sd=sdInits)
 #' @param ss_data_what What speed of sound (ss) data to be used. Default ss_data_what='est': ss is estimated by the model. Alternatively, if ss_data_what='data': ss_data must be provided and length(ss_data) == ncol(toa)
 #' @param ss_data Vector of ss-data to be used if ss_data_what = 'est'. Otherwise ss_data <- 0 (default)
-
+#' @param inline_sync If TRUE, attempt to synchronize hydrophones on-the-fly
 
 #' @return List of input data ready for use in TMB-call
 #' @export
-getInp <- function(hydros, toa, E_dist, n_ss, pingType, sdInits=1, rbi_min=0, rbi_max=0, ss_data_what='est', ss_data=0){
-	datTmb <- getDatTmb(hydros, toa, E_dist, n_ss, pingType, rbi_min, rbi_max, ss_data_what, ss_data)
+getInp <- function(hydros, toa, E_dist, n_ss, pingType, sdInits=1, rbi_min=0, rbi_max=0, ss_data_what='est', ss_data=0, inline_sync=FALSE){
+	datTmb <- getDatTmb(hydros, toa, E_dist, n_ss, pingType, rbi_min, rbi_max, ss_data_what, ss_data, inline_sync)
 	params <- getParams(datTmb)
 	inits <- getInits(pingType, sdInits)
 	return(list(
@@ -33,7 +33,7 @@ getInp <- function(hydros, toa, E_dist, n_ss, pingType, sdInits=1, rbi_min=0, rb
 #'
 #' @return List for use in TMB.
 #' @export
-getDatTmb <- function(hydros, toa, E_dist, n_ss, pingType, rbi_min, rbi_max, ss_data_what, ss_data){
+getDatTmb <- function(hydros, toa, E_dist, n_ss, pingType, rbi_min, rbi_max, ss_data_what, ss_data, inline_sync){
 	if(n_ss > 1){
 		ss_idx <- cut(1:ncol(toa), n_ss, labels=FALSE) - 1 #-1 because zero-indexing in TMB
 	} else {
@@ -62,7 +62,8 @@ getDatTmb <- function(hydros, toa, E_dist, n_ss, pingType, rbi_min, rbi_max, ss_
 		ss_idx = ss_idx,
 		ss_data_what = ss_data_what,
 		ss_data = ss_data,
-		approxBI = approxBI
+		approxBI = approxBI,
+		inline_sync = inline_sync*1
 	)
 	return(datTmb)
 }
@@ -79,12 +80,14 @@ getParams <- function(datTmb){
 		, Y = 0 + stats::rnorm(ncol(datTmb$toa), sd=10)
 		, top = zoo::na.approx(apply(datTmb$toa, 2, function(k) {stats::median(k, na.rm=TRUE)}), rule=2)	#time of ping
 		, ss=stats::rnorm(datTmb$n_ss, 1412, 2) 	#speed of sound
+		, sync_offset = rnorm(datTmb$nh, 0, 1) # Offsets to use for inline hydro syncing
+		, sync_slope  = rnorm(datTmb$nh, 0, 1e-2) # Offsets to use for inline hydro syncing
 		, logD_xy = 0				#diffusivity of transmitter movement (D_xy in ms)
 		, logSigma_bi = 0			#sigma  burst interval (sigma_bi in ms)
 		, logD_v = 0				#diffusivity of speed of sound (D_v in ms)
 		, logSigma_toa = 0			#sigma for Gaussian 
 		, logScale = 0				#scale parameter for t-distribution
-		, log_t_part = 0				#Mixture ratio between Gaussian and t
+		, log_t_part = 0			#Mixture ratio between Gaussian and t
 	)
 }
 
