@@ -47,6 +47,9 @@ getDatTmb <- function(hydros, toa, E_dist, n_ss, pingType, rbi_min, rbi_max, ss_
 	if(E_dist == "Gaus") {Edist[1] <- 1}
 	if(E_dist == "Mixture") {Edist[2] <- 1}
 	
+	# Assign time-keeper hydro based on number of detections
+	timeKeeper <- which.max(apply(toa, 1, function(k) sum(!is.na(k))))
+	
 	datTmb <- list(
 		H = matrix(c(hydros$hx, hydros$hy), ncol=2),
 		nh = nrow(hydros),
@@ -63,7 +66,8 @@ getDatTmb <- function(hydros, toa, E_dist, n_ss, pingType, rbi_min, rbi_max, ss_
 		ss_data_what = ss_data_what,
 		ss_data = ss_data,
 		approxBI = approxBI,
-		inline_sync = inline_sync*1
+		inline_sync = inline_sync*1,
+		timeKeeper = timeKeeper-1 # -1 as cpp is zero-based
 	)
 	return(datTmb)
 }
@@ -80,8 +84,9 @@ getParams <- function(datTmb){
 		, Y = 0 + stats::rnorm(ncol(datTmb$toa), sd=10)
 		, top = zoo::na.approx(apply(datTmb$toa, 2, function(k) {stats::median(k, na.rm=TRUE)}), rule=2)	#time of ping
 		, ss=stats::rnorm(datTmb$n_ss, 1412, 2) 	#speed of sound
-		, sync_offset = rnorm(datTmb$nh, 0, 1) # Offsets to use for inline hydro syncing
-		, sync_slope  = rnorm(datTmb$nh, 0, 1e-2) # Offsets to use for inline hydro syncing
+		, sync_offset = stats::rnorm(datTmb$nh, 0, 1) # Offsets to use for inline hydro syncing
+		, sync_slope  = stats::rnorm(datTmb$nh, 0, 1e-3) # Offsets to use for inline hydro syncing
+		, sync_slope2  = stats::rnorm(datTmb$nh, 0, 1e-3) # Offsets to use for inline hydro syncing
 		, logD_xy = 0				#diffusivity of transmitter movement (D_xy in ms)
 		, logSigma_bi = 0			#sigma  burst interval (sigma_bi in ms)
 		, logD_v = 0				#diffusivity of speed of sound (D_v in ms)
@@ -107,7 +112,7 @@ getInits <- function(pingType, sdInits=1) {
 	} else if(pingType == 'pbi'){
 		init_logSigma_bi <- -5
 	}
-	init_logD_v <- 0
+	init_logD_v <- 1
 	init_logSigma_toa <- -3
 	init_logScale <- 1
 	init_log_t_part <- -4

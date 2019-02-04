@@ -154,14 +154,13 @@ simHydros <- function(auto=TRUE, trueTrack=NULL){
 simToa <- function(telemetryTrack, hydros, pingType, sigmaToa, pNA, pMP, clockDrift=FALSE){
 	#correct toa
 	toa <- apply(telemetryTrack, 1, function(k) k['top'] + sqrt((hydros$hx - k['x'])^2 + (hydros$hy - k['y'])^2 ) / k['ss'])
-	
+
 	# add clock drift in hydros...
 	if(clockDrift){
-		sync_offset <- runif(nrow(hydros), -6, 6)
-		sync_slope  <- runif(nrow(hydros), -1e-3, 1e-3)
-		sync_offset[1] <- 0
-		sync_slope[1] <- 0
-		toa <- toa + sync_offset + sync_slope*toa
+		sync_offset <- stats::runif(nrow(hydros), -6, 6)
+		sync_slope  <- stats::runif(nrow(hydros), -1e-3, 1e-3)
+		sync_slope2  <- stats::runif(nrow(hydros), -1e-2, 1e-2)
+		toa <- toa + sync_offset + sync_slope*toa + sync_slope2*toa*toa*1e-6
 	}
 	
 	#add random errors
@@ -187,7 +186,7 @@ simToa <- function(telemetryTrack, hydros, pingType, sigmaToa, pNA, pMP, clockDr
 	toa <- toa + mp_mat * stats::runif(length(toa), -150, 150) / telemetryTrack$ss
 	
 	if(clockDrift){
-		return(list(toa=toa, mp_mat=mp_mat, sync_offset=sync_offset, sync_slope=sync_slope))
+		return(list(toa=toa, mp_mat=mp_mat, sync_offset=sync_offset, sync_slope=sync_slope, sync_slope2=sync_slope2))
 	} else {
 		return(list(toa=toa, mp_mat=mp_mat))
 	}

@@ -36,6 +36,7 @@ Type objective_function<Type>::operator() ()
 	DATA_SCALAR(approxBI);
 	DATA_VECTOR(Edist);
 	DATA_INTEGER(inline_sync);
+	DATA_INTEGER(timeKeeper);
 	
 	
 	PARAMETER_VECTOR(X);	//Position at time of ping
@@ -44,6 +45,7 @@ Type objective_function<Type>::operator() ()
 	PARAMETER_VECTOR(ss);		// Estimated speed of sound
 	PARAMETER_VECTOR(sync_offset);		// Offsets of hydro clock used for inline syncing
 	PARAMETER_VECTOR(sync_slope);		// Slopes of hydro clock used for inline syncing
+	PARAMETER_VECTOR(sync_slope2);		// Slopes of hydro clock used for inline syncing
 
 	PARAMETER(logD_xy);    		// Diffusivity of fish
 	Type D_xy = exp(logD_xy);
@@ -86,7 +88,7 @@ Type objective_function<Type>::operator() ()
 				} else {
 					// Type eps = toa(h,i) - sync_offset(h) - mu_toa(h,i);
 					// eps = toa(h,i) + sync_offset(h) - mu_toa(h,i);
-					eps = toa(h,i) + sync_offset(h) + toa(h,i)*sync_slope(h) - mu_toa(h,i);
+					eps = toa(h,i) + sync_offset(h) + toa(h,i)*sync_slope(h) + toa(h,i)*toa(h,i)*1e-6*sync_slope2(h) - mu_toa(h,i);
 				}
 				
 				nll -= Edist(0) * dnorm(eps, Type(0), sigma_toa, true); 					//Gaussian part					
@@ -98,8 +100,9 @@ Type objective_function<Type>::operator() ()
 	}
 	
 	// Use one hydro as time-keeper...
-	nll -= dnorm(sync_offset(0), Type(0), Type(1E-10), true);
-	nll -= dnorm(sync_slope(0), Type(0), Type(1E-10), true);
+	nll -= dnorm(sync_offset(timeKeeper), Type(0), Type(1E-10), true);
+	nll -= dnorm(sync_slope(timeKeeper), Type(0), Type(1E-10), true);
+	nll -= dnorm(sync_slope2(timeKeeper), Type(0), Type(1E-10), true);
 	
 	// Needed to ensure positive definite Hessian...
 	nll -= dnorm(log_t_part, Type(0), Type(25), true);
@@ -107,11 +110,14 @@ Type objective_function<Type>::operator() ()
 	nll -= dnorm(logScale, Type(0), Type(25), true);
 	nll -= dnorm(logSigma_bi, Type(0), Type(25), true);
 	nll -= dnorm(logD_v, Type(0), Type(25), true);
-	for(int h=1; h<nh; ++h){
-		nll -= dnorm(sync_offset(h), Type(0), Type(25), true);
-		nll -= dnorm(sync_slope(h), Type(0), Type(25), true);
+	for(int h=0; h<nh; ++h){
+		if(h != timeKeeper){
+			nll -= dnorm(sync_offset(h), Type(0), Type(25), true);
+			nll -= dnorm(sync_slope(h), Type(0), Type(25), true);
+			nll -= dnorm(sync_slope2(h), Type(0), Type(25), true);
+		}
 	}
-
+ 
 	//position component
 	nll -= dnorm(X(0),Type(0),Type(100),true);
 	nll -= dnorm(Y(0),Type(0),Type(100),true);
