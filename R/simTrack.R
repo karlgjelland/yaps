@@ -160,7 +160,7 @@ simToa <- function(telemetryTrack, hydros, pingType, sigmaToa, pNA, pMP, clockDr
 		sync_offset <- stats::runif(nrow(hydros), -6, 6)
 		sync_slope  <- stats::runif(nrow(hydros), -1e-3, 1e-3)
 		sync_slope2  <- stats::runif(nrow(hydros), -1e-2, 1e-2)
-		toa <- toa + sync_offset + sync_slope*toa + sync_slope2*toa*toa*1e-6
+		toa <- toa - sync_offset - sync_slope*toa - sync_slope2*toa*toa*1e-6
 	}
 	
 	#add random errors
