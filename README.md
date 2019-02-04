@@ -1,9 +1,9 @@
 # YAPS - (Yet Another Positioning Solver) 
 Based on the original [YAPS](https://www.nature.com/articles/s41598-017-14278-z.pdf) presented in Baktoft, Gjelland, Økland & Thygesen (2017): Positioning of aquatic animals based on time-of-arrival and random walk models using YAPS (Yet Another Positioning Solver). [DOI:10.1038/s41598-017-14278-z](https://www.nature.com/articles/s41598-017-14278-z.pdf)  
 
-A few changes have been made to allow track estimation from random burst interval transmitters (by popular demand) and to improve performance.  
+This branch introduces the option to do on-the-fly synchronization of the hydrophone array. 
 
-To use on own data, compile a toa-matrix based on synchronized hydrophone data and replace the hydros dataframe with actual hydrophone positions. 
+To use on own data, compile a toa-matrix based on hydrophone data and replace the hydros dataframe with actual hydrophone positions. 
 
 The yaps package requires [devtools](https://cran.r-project.org/web/packages/devtools/index.html) and [TMB](https://github.com/kaskr/adcomp).  
 Please see for [instructions](https://github.com/kaskr/adcomp/wiki/Download) on TMB installation. Remember to install [Rtools](https://cran.r-project.org/bin/windows/Rtools/) as specified in the TMB documentation.
@@ -11,7 +11,7 @@ Please see for [instructions](https://github.com/kaskr/adcomp/wiki/Download) on 
 Installation:
 ```
 install.packages('devtools')
-devtools::install_github("baktoft/yaps")
+devtools::install_github("baktoft/yaps, ref="inline_sync"")
 ```
 
 Usage example:
@@ -38,18 +38,23 @@ if(pingType == 'sbi') { # stable BI
 
 # Simulate hydrophone array
 hydros <- simHydros(auto=TRUE, trueTrack=trueTrack)
-toa_list <- simToa(teleTrack, hydros, pingType, sigmaToa=1e-4, pNA=0.25, pMP=0.01)
+
+# Introduce drift of hydrophone internal clocks
+clockDrift <- TRUE
+
+
+# Get TOA-matrix
+toa_list <- simToa(teleTrack, hydros, pingType, sigmaToa=1e-4, pNA=0.25, pMP=0.01, clockDrift=clockDrift)
 toa <- toa_list$toa
 
 # Specify whether to use ss_data from measured water temperature (ss_data_what <- 'data') or to estimate ss in the model (ss_data_what <- 'est')
 ss_data_what <- 'data'
 if(ss_data_what == 'data') {ss_data <- teleTrack$ss} else {ss_data <- 0}
 
-
 if(pingType == 'sbi'){
-	inp <- getInp(hydros, toa, E_dist="Mixture", n_ss=10, pingType=pingType, sdInits=0, ss_data_what=ss_data_what, ss_data=ss_data)
+	inp <- getInp(hydros, toa, E_dist="Mixture", n_ss=10, pingType=pingType, sdInits=0, ss_data_what=ss_data_what, ss_data=ss_data, inline_sync=clockDrift)
 } else if(pingType == 'rbi'){
-	inp <- getInp(hydros, toa, E_dist="Mixture", n_ss=10, pingType=pingType, sdInits=0, rbi_min=rbi_min, rbi_max=rbi_max, ss_data_what=ss_data_what, ss_data=ss_data)
+	inp <- getInp(hydros, toa, E_dist="Mixture", n_ss=10, pingType=pingType, sdInits=0, rbi_min=rbi_min, rbi_max=rbi_max, ss_data_what=ss_data_what, ss_data=ss_data, inline_sync=clockDrift)
 } 
 str(inp)
 
