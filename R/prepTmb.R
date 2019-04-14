@@ -48,7 +48,7 @@ getDatTmb <- function(hydros, toa, E_dist, n_ss, pingType, rbi_min, rbi_max, ss_
 	if(E_dist == "Mixture") {Edist[2] <- 1}
 	
 	datTmb <- list(
-		H = matrix(c(hydros$hx, hydros$hy), ncol=2),
+		H = matrix(c(hydros$hx, hydros$hy, hydros$hz), ncol=2),
 		nh = nrow(hydros),
 		np = ncol(toa),
 		Edist = Edist,
