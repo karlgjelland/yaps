@@ -14,8 +14,8 @@
 
 #' @return List of input data ready for use in TMB-call
 #' @export
-getInp <- function(hydros, toa, E_dist, n_ss, pingType, sdInits=1, rbi_min=0, rbi_max=0, ss_data_what='est', ss_data=0){
-	datTmb <- getDatTmb(hydros, toa, E_dist, n_ss, pingType, rbi_min, rbi_max, ss_data_what, ss_data)
+getInp <- function(hydros, toa, E_dist, n_ss, pingType, sdInits=1, rbi_min=0, rbi_max=0, ss_data_what='est', ss_data=0, z){
+	datTmb <- getDatTmb(hydros, toa, E_dist, n_ss, pingType, rbi_min, rbi_max, ss_data_what, ss_data, z)
 	params <- getParams(datTmb)
 	inits <- getInits(pingType, sdInits)
 	return(list(
@@ -33,7 +33,7 @@ getInp <- function(hydros, toa, E_dist, n_ss, pingType, sdInits=1, rbi_min=0, rb
 #'
 #' @return List for use in TMB.
 #' @export
-getDatTmb <- function(hydros, toa, E_dist, n_ss, pingType, rbi_min, rbi_max, ss_data_what, ss_data){
+getDatTmb <- function(hydros, toa, E_dist, n_ss, pingType, rbi_min, rbi_max, ss_data_what, ss_data, z){
 	if(n_ss > 1){
 		ss_idx <- cut(1:ncol(toa), n_ss, labels=FALSE) - 1 #-1 because zero-indexing in TMB
 	} else {
@@ -62,7 +62,8 @@ getDatTmb <- function(hydros, toa, E_dist, n_ss, pingType, rbi_min, rbi_max, ss_
 		ss_idx = ss_idx,
 		ss_data_what = ss_data_what,
 		ss_data = ss_data,
-		approxBI = approxBI
+		approxBI = approxBI,
+		z = z
 	)
 	return(datTmb)
 }

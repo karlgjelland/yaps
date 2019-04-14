@@ -35,6 +35,7 @@ Type objective_function<Type>::operator() ()
 	DATA_INTEGER(n_ss);
 	DATA_SCALAR(approxBI);
 	DATA_VECTOR(Edist);
+	DATA_VECTOR(z);
 	
 	
 	PARAMETER_VECTOR(X);	//Position at time of ping
@@ -70,18 +71,18 @@ Type objective_function<Type>::operator() ()
 	{
 		for(int h=0; h<nh; ++h){ //iterate hydros
 			if(!isNA(toa(h,i))){ //ignore NA's...
-				dist(h,i) = sqrt((H(h,0)-X(i))*(H(h,0)-X(i)) + (H(h,1)-Y(i))*(H(h,1)-Y(i)));
+				// dist(h,i) = sqrt((H(h,0)-X(i))*(H(h,0)-X(i)) + (H(h,1)-Y(i))*(H(h,1)-Y(i)));
+				dist(h,i) = sqrt((H(h,0)-X(i))*(H(h,0)-X(i)) + (H(h,1)-Y(i))*(H(h,1)-Y(i)) + (H(h,2)-z(i))*(H(h,2)-z(i)));
 				if(ss_data_what == "est"){
 					mu_toa(h,i) = top(i) +  dist(h,i)/ss(ss_idx(i));
 				} else {
 					mu_toa(h,i) = top(i) +  dist(h,i)/ss_data(i);
 				}
 				Type eps = toa(h,i) - mu_toa(h,i);
-				
 				nll -= Edist(0) * dnorm(eps, Type(0), sigma_toa, true); 					//Gaussian part					
-				
 				nll -= Edist(1) * log( G_part * dnorm(eps, Type(0),sigma_toa,false) + 		//Gaussian part
 						t_part * dt(eps/scale, Type(3.0), false) );					//t part
+				nll -= Edist(2) * log(dt(eps/scale, Type(3.0), false)/scale);
 			}
 		}
 	}
